@@ -1,3 +1,5 @@
+# vim: set fileencoding=utf8 :
+
 import sys, re, os
 from itertools import chain
 import squarify
@@ -31,7 +33,10 @@ def parseSections (fd):
 
     # skip until memory map is found
     found = False
-    for l in sys.stdin:
+    while True:
+        l = sys.stdin.readline ()
+        if not l:
+            break
         if l.strip () == 'Memory Configuration':
             found = True
             break
