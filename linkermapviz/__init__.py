@@ -111,18 +111,22 @@ def main ():
         # plot with bokeh
         output_file('linkermap.html', title='Linker map')
 
-        top = list (map (lambda x: x['y'], padded_rects))
-        bottom = list (map (lambda x: x['y']+x['dy'], padded_rects))
         left = list (map (lambda x: x['x'], padded_rects))
-        right = list (map (lambda x: x['x']+x['dx'], padded_rects))
+        top = list (map (lambda x: x['y'], padded_rects))
+        rectx = list (map (lambda x: x['x']+x['dx']/2, padded_rects))
+        recty = list (map (lambda x: x['y']+x['dy']/2, padded_rects))
+        rectw = list (map (lambda x: x['dx'], padded_rects))
+        recth = list (map (lambda x: x['dy'], padded_rects))
         files = list (map (lambda x: os.path.basename (x.path[0]) if x.path[0] else None, objects))
         size = list (map (lambda x: x.size, objects))
         children = list (map (lambda x: ','.join (map (lambda x: x[1], x.children)) if x.children else x.section, objects))
         source = ColumnDataSource(data=dict(
-            top=top,
-            bottom=bottom,
             left=left,
-            right=right,
+            top=top,
+            x=rectx,
+            y=recty,
+            width=rectw,
+            height=recth,
             file=files,
             size=size,
             children=children,
@@ -131,6 +135,7 @@ def main ():
         hover = HoverTool(tooltips=[
             ("size", "@size"),
             ("file", "@file"),
+            ("symbol", "@children"),
         ])
 
 
@@ -146,13 +151,7 @@ def main ():
 
         palette = Category10[10]
         mapper = CategoricalColorMapper (palette=palette, factors=allFiles)
-        p.quad (top='top', bottom='bottom', left='left', right='right', source=source, color={'field': 'file', 'transform': mapper}, legend='file')
-        labels = LabelSet(x='left', y='top', text='children', level='glyph',
-                  x_offset=5, y_offset=5, source=source, render_mode='canvas')
-        p.add_layout (labels)
-        labels = LabelSet(x='left', y='top', text='size', level='glyph',
-                  x_offset=5, y_offset=20, source=source, render_mode='canvas')
-        p.add_layout (labels)
+        p.rect (x='x', y='y', width='width', height='height', source=source, color={'field': 'file', 'transform': mapper}, legend='file')
 
         # set up legend, must be done after plotting
         p.legend.location = "top_left"
