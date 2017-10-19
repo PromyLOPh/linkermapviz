@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf8 :
 
 import sys, re, os
-from itertools import chain
+from itertools import chain, groupby
 import squarify
 
 from bokeh.plotting import figure, show, output_file, ColumnDataSource
@@ -16,8 +16,10 @@ class Objectfile:
         self.offset = offset
         self.size = size
         self.path = (None, None)
+        self.basepath = None
         if comment:
             self.path = re.match (r'^(.+?)(?:\(([^\)]+)\))?$', comment).groups ()
+            self.basepath = os.path.basename (self.path[0])
         self.children = []
 
     def __repr__ (self):
@@ -93,9 +95,12 @@ def main ():
     plots = []
     whitelistedSections = list (filter (lambda x: x.section in sectionWhitelist, sections))
     allObjects = list (chain (*map (lambda x: x.children, whitelistedSections)))
-    allFiles = list (set (map (lambda x: os.path.basename (x.path[0]) if x.path[0] else None, allObjects)))
+    allFiles = list (set (map (lambda x: x.basepath, allObjects)))
     for s in whitelistedSections:
         objects = s.children
+        groupsize = {}
+        for k, g in groupby (sorted (objects, key=lambda x: x.basepath), lambda x: x.basepath):
+            groupsize[k] = sum (map (lambda x: x.size, g))
         objects.sort (reverse=True, key=lambda x: x.size)
         values = list (map (lambda x: x.size, objects))
         totalsize = sum (values)
@@ -117,9 +122,10 @@ def main ():
         recty = list (map (lambda x: x['y']+x['dy']/2, padded_rects))
         rectw = list (map (lambda x: x['dx'], padded_rects))
         recth = list (map (lambda x: x['dy'], padded_rects))
-        files = list (map (lambda x: os.path.basename (x.path[0]) if x.path[0] else None, objects))
+        files = list (map (lambda x: x.basepath, objects))
         size = list (map (lambda x: x.size, objects))
         children = list (map (lambda x: ','.join (map (lambda x: x[1], x.children)) if x.children else x.section, objects))
+        legend = list (map (lambda x: '{} ({})'.format (x.basepath, groupsize[x.basepath]), objects))
         source = ColumnDataSource(data=dict(
             left=left,
             top=top,
@@ -130,6 +136,7 @@ def main ():
             file=files,
             size=size,
             children=children,
+            legend=legend,
         ))
 
         hover = HoverTool(tooltips=[
@@ -151,7 +158,7 @@ def main ():
 
         palette = Category10[10]
         mapper = CategoricalColorMapper (palette=palette, factors=allFiles)
-        p.rect (x='x', y='y', width='width', height='height', source=source, color={'field': 'file', 'transform': mapper}, legend='file')
+        p.rect (x='x', y='y', width='width', height='height', source=source, color={'field': 'file', 'transform': mapper}, legend='legend')
 
         # set up legend, must be done after plotting
         p.legend.location = "top_left"
