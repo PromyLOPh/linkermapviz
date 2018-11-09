@@ -165,7 +165,7 @@ def main ():
         p.legend.orientation = "horizontal"
 
         plots.append (p)
-    show (column (*plots, responsive=True))
+    show (column (*plots, sizing_mode="scale_width"))
 
 if __name__ == '__main__':
     main ()
