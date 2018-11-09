@@ -91,7 +91,7 @@ def main ():
         print ('start of memory config not found, did you invoke the compiler/linker with LANG=C?')
         return
 
-    sectionWhitelist = {'.text', '.data', '.bss'}
+    sectionWhitelist = {'.text', '.data', '.bss', '.rodata'}
     plots = []
     whitelistedSections = list (filter (lambda x: x.section in sectionWhitelist, sections))
     allObjects = list (chain (*map (lambda x: x.children, whitelistedSections)))
