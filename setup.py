@@ -9,8 +9,8 @@ setup(
     license='LICENSE.txt',
     description='Visualize GNU ld’s linker map with a tree map.',
     install_requires=[
-        'bokeh',
-        'squarify',
+        'bokeh>=2.0,<3.0',
+        'squarify>=0.4.3,<1.0',
     ],
     entry_points={
     'console_scripts': [
